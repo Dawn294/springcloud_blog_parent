@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "mybatis-3-mapper.dtd" >
+<mapper namespace="com.czh.blog.dao.BlogDao">
+    <update id="deleteByUserId">
+        update blog set is_delete=1 where user_id=#{userId}
+    </update>
+
+    <select id="getBlogByUserId" resultType="int">
+        select count(*) from blog where user_id=#{userId} and is_delete=0
+    </select>
+</mapper>

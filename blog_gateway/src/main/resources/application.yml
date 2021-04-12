@@ -1,0 +1,32 @@
+server:
+  port: 8080
+spring:
+  application:
+    name: blog_gateway
+  cloud:
+    gateway:
+      routes:
+        - id: route1 # 路由id，可以随意写，如果不指定，就默认是UUID
+          uri: lb://admin  # 代理的服务地址,lb表示从eureka中获取具体服务
+          predicates: # 路由断言：可以匹配映射路径
+            - Path=/admin/**
+        - id: route2
+          uri: lb://blog
+          predicates:
+            - Path=/blog/**
+        - id: route3
+          uri: lb://img
+          predicates:
+            - Path=/img/**
+        - id: route4
+          uri: lb://email
+          predicates:
+            - Path=/email/**
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:10086/eureka
+  instance:
+    ip-address: 127.0.0.1 # ip地址
+    prefer-ip-address: true # 更倾向于使用ip，而不是host名
+

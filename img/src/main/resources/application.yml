@@ -1,0 +1,16 @@
+server:
+  port: 9092
+spring:
+  application:
+    name: img
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:10086/eureka
+  instance:
+    ip-address: 127.0.0.1 # ip地址
+    prefer-ip-address: true # 更倾向于使用ip，而不是host名
+#
+#图片前缀
+img:
+  prefix: d:\\img\\
