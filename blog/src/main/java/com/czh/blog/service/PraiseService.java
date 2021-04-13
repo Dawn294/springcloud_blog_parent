@@ -5,6 +5,8 @@ import com.czh.blog.entity.Praise;
 
 public interface PraiseService extends IService<Praise> {
 
-    public boolean praiseBlog(Long blogId);
+    boolean praiseBlog(Long blogId);
+
+    boolean praiseBlog2(Long blogId);
 
 }
