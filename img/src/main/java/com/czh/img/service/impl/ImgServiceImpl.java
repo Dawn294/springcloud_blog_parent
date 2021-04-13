@@ -2,6 +2,7 @@ package com.czh.img.service.impl;
 
 import com.czh.common.enums.StatusEnum;
 import com.czh.common.response.Result;
+import com.czh.img.client.BlogImageClient;
 import com.czh.img.entity.BlogImage;
 import com.czh.img.service.ImgService;
 import org.slf4j.Logger;
@@ -31,6 +32,9 @@ public class ImgServiceImpl implements ImgService {
 
     @Resource
     private Environment environment;
+
+    @Resource
+    private BlogImageClient blogImageClient;
 
     @Override
     public Result uploadBlogPic(MultipartHttpServletRequest request) {
@@ -88,18 +92,12 @@ public class ImgServiceImpl implements ImgService {
             //blogImageService.addBlogImageBatch(blogImageList);
 
             //改进：远程调用blog_image
+            Result imgResult = blogImageClient.addBlogImage(blogImageList);
+            if (!imgResult.getCode().equals(StatusEnum.SUCCESS.getCode())) {
+                throw new RuntimeException("添加博客图片失败！");
+            }
 
-            //返回blog_image的id
-
-            //博客图片id
-            StringBuffer blogImageIds = new StringBuffer();
-//            for (BlogImage blogImage : blogImageList) {
-//                blogImageIds.append(blogImage.getId() + ",");
-//            }
-
-            // 1,2,3,
-//            result.setData(blogImageIds.substring(0, blogImageIds.length() - 1));
-            result.setData(blogImageIds);
+            result.setData(imgResult.getData());
         } catch (Exception e) {
             logger.error("上传博客图片错误", e);
             result = new Result(StatusEnum.FAIL);

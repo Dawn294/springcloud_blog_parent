@@ -35,12 +35,12 @@ public class UserController {
     @Resource
     private UserService userService;
 
-    @Value("${test.name}")
-    private String name;
+//    @Value("${test.name}")
+//    private String name;
 
     @RequestMapping(value = "add", method = RequestMethod.POST)
     public Result add(@RequestBody @Validated User user, BindingResult bindingResult) {
-        System.out.println("配置文件中的test.name = " + name);
+//        System.out.println("配置文件中的test.name = " + name);
         Result result = new Result(StatusEnum.SUCCESS);
         String res = ValidatorUtil.checkResult(bindingResult);
         if (!StringUtils.isEmpty(res)) {

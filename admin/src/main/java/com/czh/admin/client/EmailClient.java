@@ -1,5 +1,6 @@
 package com.czh.admin.client;
 
+import com.czh.admin.client.impl.EmailClientFallBack;
 import com.czh.admin.entity.EmailEntity;
 import com.czh.common.response.Result;
 import org.springframework.cloud.openfeign.FeignClient;
@@ -14,9 +15,10 @@ import org.springframework.web.bind.annotation.RequestMethod;
  * @Description
  * @date 2021/4/9
  */
-@FeignClient(value = "email")
+@FeignClient(value = "email",fallback = EmailClientFallBack.class)
 public interface EmailClient {
 
     @RequestMapping(value = "/email/email/sendEmail", method = RequestMethod.POST)
     Result sendEmail(@RequestBody EmailEntity emailEntity);
+
 }
