@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: 8090
 spring:
   application:
     name: blog_gateway
@@ -22,6 +22,10 @@ spring:
           uri: lb://email
           predicates:
             - Path=/email/**
+        - id: route5
+          uri: lb://blog-elasticsearch
+          predicates:
+            - Path=/es/**
 eureka:
   client:
     service-url:

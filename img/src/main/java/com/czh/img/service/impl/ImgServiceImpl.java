@@ -5,6 +5,7 @@ import com.czh.common.response.Result;
 import com.czh.img.client.BlogImageClient;
 import com.czh.img.entity.BlogImage;
 import com.czh.img.service.ImgService;
+import io.seata.spring.annotation.GlobalTransactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
@@ -37,6 +38,7 @@ public class ImgServiceImpl implements ImgService {
     private BlogImageClient blogImageClient;
 
     @Override
+    @GlobalTransactional(name = "seata_admin_blog", rollbackFor = Exception.class)
     public Result uploadBlogPic(MultipartHttpServletRequest request) {
         Result result = new Result(StatusEnum.SUCCESS);
         //博客图片
@@ -97,12 +99,14 @@ public class ImgServiceImpl implements ImgService {
                 throw new RuntimeException("添加博客图片失败！");
             }
 
+
+
             result.setData(imgResult.getData());
         } catch (Exception e) {
             logger.error("上传博客图片错误", e);
             result = new Result(StatusEnum.FAIL);
         }
-
+//        int a = 1/0;   //测试事务回流
         return result;
     }
 }

@@ -9,12 +9,16 @@ import com.czh.admin.entity.User;
 import com.czh.admin.service.UserService;
 import com.czh.admin.utils.ShiroUtil;
 import com.czh.common.constants.Constant;
+import com.czh.common.constants.RedisConstant;
 import com.czh.common.enums.StatusEnum;
 import com.czh.common.response.Result;
 import com.czh.common.utils.SnowflakeUtil;
+import io.seata.spring.annotation.GlobalTransactional;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.BeanUtils;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +26,8 @@ import javax.annotation.Resource;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author Dawn294
@@ -39,6 +45,9 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
 
     @Resource
     private BlogClient blogClient;
+
+    @Resource
+    private RedisTemplate redisTemplate;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -74,7 +83,8 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
+//    @Transactional(rollbackFor = Exception.class)
+    @GlobalTransactional(name = "seata_admin_blog", rollbackFor = Exception.class)
     public boolean deleteById(Long userId) {
         User user = new User();
         user.setUserId(userId);
@@ -85,6 +95,10 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
         Result result = blogClient.deleteByUserId(userId);
         if (!result.getCode().equals(StatusEnum.SUCCESS.getCode())) {
             throw new RuntimeException("删除用户博客失败！");
+        }
+
+        if (userId == 8) {
+            throw new RuntimeException("分布式事务异常！");
         }
 
         return b;
@@ -99,7 +113,7 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
         if (!result.getCode().equals(StatusEnum.SUCCESS.getCode())) {
             throw new RuntimeException("查询用户博客数量失败！");
         }
-        map.put("blogNum",result.getData());
+        map.put("blogNum", result.getData());
         return map;
     }
 
@@ -110,9 +124,67 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
             return null;
         }
         String salt = loginUser.getSalt();
-        if (!(ShiroUtil.sha256(password,salt).equals(loginUser.getPassword()))){
+        if (!(ShiroUtil.sha256(password, salt).equals(loginUser.getPassword()))) {
             return null;
         }
         return loginUser;
+    }
+
+    @Override
+    public Map<String, Object> getUserById2(Long userId) {
+        Map<String, Object> map = new HashMap<>();
+        User user = null;
+        String key = RedisConstant.STRING_USER + userId;
+        ValueOperations valueOperations = redisTemplate.opsForValue();
+
+        if (redisTemplate.hasKey(key)) {
+            user = (User) valueOperations.get(key);
+        }else{
+            user = this.getById(userId);
+            System.out.println("redis中不存在，在数据库中查询！");
+            if (user != null) {
+                valueOperations.set(key,user);
+            }else{
+                valueOperations.set(key,new User());
+                redisTemplate.expire(key,60, TimeUnit.SECONDS);
+            }
+        }
+        map.put("user",user);
+        return map;
+    }
+
+    @Override
+    public Map<String, Object> getUserById4(Long userId) {
+        Map<String,Object> map = new HashMap<>();
+        User user = null;
+        String key = RedisConstant.STRING_USER+userId;
+        ValueOperations valueOperations = redisTemplate.opsForValue();
+        if (redisTemplate.hasKey(key)) {
+            user = (User) valueOperations.get(key);
+        }else{
+            String lockKey = RedisConstant.STRING_BLOCK_USER;
+            String value = UUID.randomUUID().toString()+System.nanoTime();
+            Boolean lock = valueOperations.setIfAbsent(lockKey, value);
+            try {
+                if (lock) {
+                    user = this.getById(userId);
+                    System.out.println("redis中不存在，在数据库中查询！");
+                    if (user != null) {
+                        valueOperations.set(key,user);
+                    }else{
+                        valueOperations.set(key,new User());
+                        redisTemplate.expire(key,60, TimeUnit.SECONDS);
+                    }
+                }else{
+
+                }
+            } finally {
+                if (value.equals(valueOperations.get(lockKey))) {
+                    redisTemplate.delete(lockKey);
+                }
+            }
+        }
+        map.put("user",user);
+        return map;
     }
 }

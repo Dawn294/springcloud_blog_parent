@@ -20,5 +20,9 @@ public interface UserService extends IService<User> {
 
     Map<String,Object> getUserById(Long userId);
 
+    Map<String, Object> getUserById2(Long userId);
+
+    Map<String, Object> getUserById4(Long userId);
+
     User login(String username,String password);
 }

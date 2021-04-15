@@ -3,6 +3,10 @@ server:
 spring:
   application:
     name: img
+  cloud:
+    alibaba:
+      seata:
+        tx-service-group: seata_admin_blog
 eureka:
   client:
     service-url:
